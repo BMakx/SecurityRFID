@@ -9,14 +9,14 @@
  *   3. Loop: send MASTER_ID → wait for Slave decision → signal result.
  */
 
-#include "../common/config.h"   /* F_CPU must be defined before util/delay.h */
+#include "common/config.h"   /* F_CPU must be defined before util/delay.h */
 #include <util/delay.h>
 #include <string.h>
-#include "../common/lcd.h"
-#include "../common/uart.h"
+#include "common/lcd.h"
+#include "common/uart.h"
 #include "bt_master.h"
 #include "leds.h"
-#include "config.h"             /* SLAVE_BT_ADDR, MASTER_ID, CYCLE_PAUSE_MS */
+#include "config.h"          /* SLAVE_BT_ADDR, MASTER_ID, CYCLE_PAUSE_MS */
 
 int main(void) {
     LEDs_init();

@@ -13,15 +13,15 @@ OBJCOPY    = avr-objcopy
 AVRDUDE    = avrdude
 
 CFLAGS     = -mmcu=$(MCU) -DF_CPU=$(F_CPU) -Os -Wall -Wextra \
-             -I. -I../common
+             -I.
 
 # All object files needed for the Slave binary
 OBJ = main.o \
       buttons.o \
       bt_slave.o \
-      ../common/uart.o \
-      ../common/lcd.o \
-      ../common/btm222.o
+      common/uart.o \
+      common/lcd.o \
+      common/btm222.o
 
 TARGET = slave
 
@@ -40,3 +40,4 @@ flash: $(TARGET).hex
 
 clean:
 	rm -f $(OBJ) $(TARGET).elf $(TARGET).hex
+

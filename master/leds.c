@@ -4,7 +4,7 @@
  * LED signals on PORT A, Active Low (writing 0 lights a diode).
  */
 
-#include "../common/config.h"
+#include "common/config.h"
 #include <util/delay.h>
 #include <avr/io.h>
 #include "leds.h"

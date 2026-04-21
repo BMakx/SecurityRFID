@@ -9,11 +9,11 @@
  *   3. Loop: receive ID from Master → prompt operator → send decision.
  */
 
-#include "../common/config.h"   /* F_CPU before util/delay.h */
+#include "common/config.h"   /* F_CPU before util/delay.h */
 #include <util/delay.h>
 #include <string.h>
-#include "../common/lcd.h"
-#include "../common/uart.h"
+#include "common/lcd.h"
+#include "common/uart.h"
 #include "bt_slave.h"
 #include "buttons.h"
 

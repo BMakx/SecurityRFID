@@ -1,0 +1,15 @@
+# Microchip Studio / Atmel Studio build output
+Debug/
+Release/
+*.elf
+*.hex
+*.eep
+*.lss
+*.map
+*.srec
+*.o
+
+# Microchip Studio IDE metadata (machine-specific, regenerated on open)
+*.suo
+*.user
+*.atsuo
