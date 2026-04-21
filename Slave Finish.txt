@@ -1,0 +1,204 @@
+#include <avr/io.h>
+#define F_CPU 11059200UL
+#include <util/delay.h>
+#include <stdint.h>
+#include <string.h>
+
+#define BAUD 19200UL
+#define MYUBRR ((F_CPU / 16UL / BAUD) - 1)
+
+// Definicje pinów dla przycisków
+#define BTN_OK  PB0
+#define BTN_NO  PB1
+
+// --- Deklaracje funkcji ---
+void LCD_init(void);
+void LCD_send_4bits(uint8_t bits, uint8_t rs);
+void LCD_send_byte(uint8_t byte, uint8_t rs);
+void LCD_write_string(const char* s);
+void LCD_command(uint8_t command);
+void LCD_clear(void);
+void LCD_set_cursor(uint8_t row, uint8_t col);
+
+void UART_init(unsigned int ubrr);
+void UART_send_char(char data);
+void UART_send_string(const char* s);
+uint8_t UART_char_available(void);
+void UART_flush(void);
+void UART_read_line(char* buffer, uint8_t max_len, uint16_t timeout_ms);
+
+void BT_send_command(const char *cmd);
+uint8_t BT_wait_keyword(const char *keyword, uint16_t timeout_ms);
+void BTM222_Init_slave(void);
+void BTM222_Handshake(void);
+void Przyciski_Init(void);
+
+// --- MAIN ---
+int main(void)
+{
+    LCD_init();
+    UART_init(MYUBRR);
+    Przyciski_Init();
+
+    LCD_clear();
+    LCD_write_string("SLAVE START");
+
+    BTM222_Init_slave();
+    
+    LCD_clear();
+    LCD_set_cursor(0, 0);
+    LCD_write_string("Czekam na polacz");
+
+    // Czekamy na Handshake od Mastera (nieograniczony czas)
+    BTM222_Handshake();
+
+    char rx_buf[20];
+
+    // --- GŁÓWNA PĘTLA AUTORYZACYJNA ---
+    while (1) {
+        LCD_clear();
+        LCD_write_string("Czekam na ID...");
+        
+        // Czytamy aż przyjdzie nowa linia
+        UART_read_line(rx_buf, sizeof(rx_buf), 0);
+        
+        // Zabezpieczenie przed echem PING/READY
+        if (strlen(rx_buf) > 0 && strcmp(rx_buf, "PING") != 0 && strcmp(rx_buf, "READY") != 0) {
+            
+            // Przyszło ID! Wyświetlamy je i pytamy o zgodę
+            LCD_clear();
+            LCD_set_cursor(0, 0);
+            LCD_write_string(rx_buf);
+            LCD_set_cursor(1, 0);
+            LCD_write_string("1:Zgoda 2:Odrzuc");
+            
+            // Oczekujemy na wciśnięcie przycisku
+            while (1) {
+                // Sprawdzenie przycisku AKCEPTUJ (PB0 zwarty do GND)
+                if (!(PINB & (1 << BTN_OK))) {
+                    _delay_ms(50); // Eliminacja drgań styków
+                    while (!(PINB & (1 << BTN_OK))); // Czekaj na puszczenie przycisku
+                    
+                    UART_send_string("OK\r\n"); // Info do Mastera
+                    
+                    LCD_clear();
+                    LCD_write_string("ZAAKCEPTOWANO");
+                    _delay_ms(3000); // Wyświetlanie decyzji przez 3s
+                    break;
+                }
+                
+                // Sprawdzenie przycisku ODRZUĆ (PB1 zwarty do GND)
+                if (!(PINB & (1 << BTN_NO))) {
+                    _delay_ms(50); // Eliminacja drgań styków
+                    while (!(PINB & (1 << BTN_NO))); // Czekaj na puszczenie przycisku
+                    
+                    UART_send_string("ODRZUCONO\r\n"); // Info do Mastera
+                    
+                    LCD_clear();
+                    LCD_write_string("ODRZUCONO");
+                    _delay_ms(3000); // Wyświetlanie decyzji przez 3s
+                    break;
+                }
+            }
+        }
+    }
+}
+
+// --- Funkcje sprzętowe ---
+void Przyciski_Init(void) {
+    // Ustawienie pinów PB0 i PB1 jako WEJŚCIA
+    DDRB &= ~((1 << BTN_OK) | (1 << BTN_NO));
+    // Włączenie wbudowanych rezystorów podciągających (Pull-Up)
+    PORTB |= (1 << BTN_OK) | (1 << BTN_NO);
+}
+void UART_init(unsigned int ubrr) {
+    UBRRH = (unsigned char)(ubrr >> 8);
+    UBRRL = (unsigned char)ubrr;
+    UCSRB = (1 << RXEN) | (1 << TXEN);
+    UCSRC = (1 << URSEL) | (1 << UCSZ1) | (1 << UCSZ0);
+}
+void UART_send_char(char data) {
+    while (!(UCSRA & (1 << UDRE))) { }
+    UDR = data;
+}
+void UART_send_string(const char* s) {
+    while (*s) UART_send_char(*s++);
+}
+uint8_t UART_char_available(void) {
+    return (UCSRA & (1 << RXC)) ? 1 : 0;
+}
+void UART_flush(void) {
+    while (UART_char_available()) { (void)UDR; }
+}
+void UART_read_line(char* buffer, uint8_t max_len, uint16_t timeout_ms) {
+    uint8_t i = 0; buffer[0] = '\0';
+    while (timeout_ms > 0 || timeout_ms == 0) {
+        if (UART_char_available()) {
+            char c = UDR;
+            if (c == '\r' || c == '\n') {
+                if (i > 0) { buffer[i] = '\0'; return; }
+            } else if (i < max_len - 1) {
+                buffer[i++] = c;
+            }
+        } else {
+            _delay_ms(1);
+            if (timeout_ms > 0) timeout_ms--;
+        }
+    }
+    buffer[i] = '\0';
+}
+void BT_send_command(const char *cmd) {
+    UART_send_string(cmd); UART_send_char('\r');
+}
+uint8_t BT_wait_keyword(const char *keyword, uint16_t timeout_ms) {
+    uint8_t idx = 0; uint8_t key_len = (uint8_t)strlen(keyword); uint16_t t = timeout_ms;
+    while (t > 0) {
+        if (UART_char_available()) {
+            char c = UDR;
+            if (c == keyword[idx]) { idx++; if (idx == key_len) return 1; } 
+            else { idx = (c == keyword[0]) ? 1 : 0; }
+        } else { _delay_ms(1); t--; }
+    } return 0;
+}
+void BTM222_Init_slave(void) {
+    _delay_ms(1000); UART_flush();
+    BT_send_command("AT"); _delay_ms(120);
+    BT_send_command("ATE0"); _delay_ms(120);
+    BT_send_command("ATQ0"); _delay_ms(120);
+    BT_send_command("ATN=SLAVE"); _delay_ms(120);
+    BT_send_command("ATR=1"); _delay_ms(120);
+    BT_send_command("ATP=1234"); _delay_ms(120);
+}
+void BTM222_Handshake(void) {
+    while (1) {
+        if (BT_wait_keyword("PING", 1000)) {
+            UART_send_string("READY\r\n");
+            break;
+        }
+    }
+}
+void LCD_init() {
+    DDRC = 255; PORTC = 0; _delay_ms(40);
+    PORTC = 0b00100011; PORTC = 0b00000011; _delay_ms(5);
+    PORTC = 0b00100011; PORTC = 0b00000011; _delay_us(100);
+    PORTC = 0b00100011; PORTC = 0b00000011; _delay_us(50);
+    PORTC = 0b00100010; PORTC = 0b00000010;
+    PORTC = 0b00101100; PORTC = 0b00001100; _delay_ms(50);
+    PORTC = 0b00100000; PORTC = 0b00000000;
+    PORTC = 0b00101100; PORTC = 0b00001100; _delay_ms(50);
+    PORTC = 0b00100000; PORTC = 0b00000000;
+    PORTC = 0b00100001; PORTC = 0b00000001; _delay_ms(100);
+    PORTC = 0b00100001; PORTC = 0b00000001;
+    PORTC = 0b00101000; PORTC = 0b00001000; _delay_ms(50);
+    PORTC = 0b01100000; PORTC = 0b01000100;
+    PORTC = 0b01100001; PORTC = 0b01000001; _delay_ms(50);
+}
+void LCD_command(uint8_t command) { LCD_send_byte(command, 0); _delay_ms(2); }
+void LCD_send_4bits(uint8_t bits, uint8_t rs) {
+    uint8_t port = (rs ? (1 << 6) : 0) | (1 << 5) | (bits >> 4);
+    PORTC = port; _delay_ms(1); PORTC &= ~(1 << 5);
+}
+void LCD_send_byte(uint8_t byte, uint8_t rs) { LCD_send_4bits(byte & 0xF0, rs); LCD_send_4bits(byte << 4, rs); }
+void LCD_write_string(const char* s) { while (*s) LCD_send_byte(*s++, 1); }
+void LCD_clear() { LCD_command(0x01); _delay_ms(2); }
+void LCD_set_cursor(uint8_t row, uint8_t col) { LCD_command((row == 0 ? 0x80 : 0xC0) + col); }
