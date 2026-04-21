@@ -136,6 +136,12 @@
     <Compile Include="config.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="rfid.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="rfid.h">
+      <SubType>compile</SubType>
+    </Compile>
     <!-- Shared driver sources (copied locally so the project is self-contained) -->
     <Compile Include="common\uart.c">
       <SubType>compile</SubType>

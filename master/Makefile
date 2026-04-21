@@ -19,6 +19,7 @@ CFLAGS    = -mmcu=$(MCU) -DF_CPU=$(F_CPU) -Os -Wall -Wextra \
 OBJ = main.o \
       leds.o \
       bt_master.o \
+      rfid.o \
       common/uart.o \
       common/lcd.o \
       common/btm222.o
