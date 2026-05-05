@@ -11,9 +11,6 @@
 /* Bluetooth address of the Slave device */
 #define SLAVE_BT_ADDR   "00126f9e3e5c"
 
-/* ID string that Master broadcasts to Slave each cycle */
-#define MASTER_ID       "OCHRONIARZ 67"
-
 /* How many ms to wait between authorisation cycles */
 #define CYCLE_PAUSE_MS  5000
 
