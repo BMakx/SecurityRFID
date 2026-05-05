@@ -4,7 +4,7 @@
  * Debounced blocking button read for PB0 (ACCEPT) and PB1 (REJECT).
  */
 
-#include "../common/config.h"
+#include "common/config.h"
 #include <util/delay.h>
 #include <avr/io.h>
 #include "buttons.h"

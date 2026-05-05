@@ -9,11 +9,11 @@
  *   3. Loop: wait for card → send UID → wait for Slave decision → signal result.
  */
 
-#include "../common/config.h"   /* F_CPU must be defined before util/delay.h */
+#include "common/config.h"   /* F_CPU must be defined before util/delay.h */
 #include <util/delay.h>
 #include <string.h>
-#include "../common/lcd.h"
-#include "../common/uart.h"
+#include "common/lcd.h"
+#include "common/uart.h"
 #include "bt_master.h"
 #include "leds.h"
 #include "rfid.h"

@@ -13,16 +13,16 @@ OBJCOPY   = avr-objcopy
 AVRDUDE   = avrdude
 
 CFLAGS    = -mmcu=$(MCU) -DF_CPU=$(F_CPU) -Os -Wall -Wextra \
-            -I. -I../common
+            -I.
 
 # All object files needed for the Master binary
 OBJ = main.o \
       leds.o \
       bt_master.o \
       rfid.o \
-      ../common/uart.o \
-      ../common/lcd.o \
-      ../common/btm222.o
+      common/uart.o \
+      common/lcd.o \
+      common/btm222.o
 
 TARGET = master
 

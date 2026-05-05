@@ -5,3 +5,15 @@
 *.map
 *.lst
 *.sym
+*.eep
+*.lss
+*.srec
+
+# Microchip Studio / Atmel Studio output (when building inside IDE)
+Debug/
+Release/
+
+# IDE metadata (machine-specific)
+*.suo
+*.user
+*.atsuo

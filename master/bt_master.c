@@ -5,10 +5,10 @@
  * The module is configured, then ATZ reboots it so settings take effect.
  */
 
-#include "../common/config.h"
+#include "common/config.h"
 #include <util/delay.h>
-#include "../common/uart.h"
-#include "../common/btm222.h"
+#include "common/uart.h"
+#include "common/btm222.h"
 #include "bt_master.h"
 
 void BTM222_init_master(void) {

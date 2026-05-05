@@ -6,7 +6,7 @@
  * aligned with the widely used Arduino MFRC522 library (miguelbalboa/rfid).
  */
 
-#include "../common/config.h"
+#include "common/config.h"
 #include <util/delay.h>
 #include <avr/io.h>
 #include <string.h>

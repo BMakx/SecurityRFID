@@ -6,10 +6,10 @@
  * the Master dials in and the SPP link forms automatically.
  */
 
-#include "../common/config.h"
+#include "common/config.h"
 #include <util/delay.h>
-#include "../common/uart.h"
-#include "../common/btm222.h"
+#include "common/uart.h"
+#include "common/btm222.h"
 #include "bt_slave.h"
 
 void BTM222_init_slave(void) {
