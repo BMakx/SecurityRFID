@@ -1,0 +1,7 @@
+# AVR / GCC build artifacts
+*.o
+*.elf
+*.hex
+*.map
+*.lst
+*.sym
